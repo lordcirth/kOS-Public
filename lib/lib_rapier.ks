@@ -54,11 +54,3 @@ parameter new.		//Pass "On" or "Off", since True/False is unclear here
 		}.
 	}.
 }.
-
-
-FUNCTION GimbalOn {
-	gimbal:SETFIELD("gimbal",false).  //Disables gimbal, strangely.
-}.
-FUNCTION GimbalOff {
-	gimbal:SETFIELD("gimbal",true).  //Disables gimbal, strangely.
-}.

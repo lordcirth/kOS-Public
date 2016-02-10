@@ -69,6 +69,12 @@ LOCK STEERING TO PROGRADE.  //Minimize drag
 PrintHUD("Boost phase complete.  Coasting.").
 
 WAIT UNTIL ALTITUDE > 70000. //Out of atmosphere
+
+}. //End Landed IF
+
+IF (SHIP:STATUS = "SUB_ORBITAL") { //Allow continuing after reboot
+
+LOCK STEERING TO PROGRADE.  
 SET ApSpd TO velocityAt(SHIP, ETA:Apoapsis + TIME:SECONDS):ORBIT:MAG. //Scalar speed at Ap
 PRINT ApSpd + "m/s at Apoapsis".
 
@@ -76,9 +82,12 @@ PRINT ApSpd + "m/s at Apoapsis".
 //A lot of assumed constants / fudge factors in here
 //TODO: Fancier, general solutions
 
+// F = m*a , so a = F / m.
+
+SET Accel TO SHIP:MaxThrust / SHIP:Mass. // m/s^2
+PRINT "Acceleration: " + Accel.
 SET burnDv TO 2200 - ApSpd.
-//SET Accel TO 12. //Moved to craft-specific file
-SET burnLen TO burnDv/Accel.
+SET burnLen TO burnDv/Accel.  //Assume TWR won't change during burn
 PRINT "Will burn for " + burnLen.
 WAIT UNTIL ETA:Apoapsis < ( burnLen / 2 ).
 PrintHUD("Beginning final burn.").
@@ -90,7 +99,7 @@ LOCK THROTTLE TO 0.
 PrintHUD("Circularization complete. Releasing controls.").
 
 
-}. //End massive IF
+}. //End Suborbital IF
 ELSE { //Skip script if not landed, for safety.
 	PrintHUD("Vessel not landed.  Exiting.").
 }. 

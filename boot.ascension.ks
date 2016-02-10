@@ -12,11 +12,12 @@ SET takeoff TO 110. // Takeoff speed in m/s.
 SET climbDeg TO 25. // Pitch for initial climb in degrees
 SET sprintAoA TO 6. // Pitch to maintain level flight at beginning of sprint
 SET boostDeg TO 30. // Pitch when switching to rocket / boost phase.
-SET Accel    TO 12.  // ~12m/s^2 acceleration at Ap.  TODO fix in ssto.ks 
 
+IF SHIP:STATUS = "PRELAUNCH" {
 PrintHUD("Craft ready.  Launching in 10 seconds.  Control-C to abort.").
 //Print "Enter 'RUN ssto' to launch.".
 WAIT 10.
+}. ELSE PrintHUD ("Rebooted in flight.").
 run ssto.
 
 //Delete boot script to prevent running on reboot.

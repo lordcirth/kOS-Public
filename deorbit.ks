@@ -96,8 +96,9 @@ SET WARP TO 0.  //Realtime
 //Prep for deorbit burn
 
 LOCK STEERING TO Retrograde.  
-UNTIL abs( (Retrograde - SHIP:Facing):YAW ) < 0.2	//print info until the ship is 
-AND abs( (Retrograde - SHIP:Facing):PITCH ) < 0.2 	//facing Retrograde.
+Print "Turning".
+//print info until the ship is facing Retrograde.
+UNTIL VAng(SHIP:Facing:Vector,Retrograde:Vector) < 0.2
 AND  runwayLong - BurnLong - Ship:Longitude < 0.2 {	//And it's time to burn
 
 	clearscreen.

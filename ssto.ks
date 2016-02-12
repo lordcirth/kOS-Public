@@ -17,9 +17,8 @@ RUN ONCE lib_text.ks.  //Declare PrintHUD()
 COPY lib_rapier.ks from 0.
 RUN ONCE lib_rapier.ks.  //Import RAPIER engine handling functions
 
-//Only do anything if we're landed
+//Check if we're landed, otherwise skip ahead
 IF (SHIP:STATUS = "LANDED") OR (SHIP:STATUS = "PRELAUNCH") {
-BRAKES ON.
 
 //Make sure the engine is in air breathing mode
 SetRapiersMode("AirBreathing").
@@ -27,19 +26,25 @@ SetRapiersMode("AirBreathing").
 //Disable gimbal - it makes the plane twitchy
 SetRapiersGimbal("Off").
 
-PrintHUD("Launching.").
-LOCK THROTTLE TO 1.
-SetRapiersOn().
 
+LOCK THROTTLE TO 1.
+//If we didn't reboot on runway
+IF SHIP:GROUNDSPEED < 3 { 
+	BRAKES ON.
+	WAIT 5.  //Spin up the engine
+}.//Otherwise skip spinup
+
+SetRapiersOn().
+}. //End LANDED IF
+LOCK THROTTLE TO 1.
+
+BRAKES OFF. 
 LOCK STEERING TO HEADING(90,2). //2 deg to account for wheel tilt.
 
-WAIT 5.  //Spin up the engine
-BRAKES OFF. 
 
 WAIT UNTIL SHIP:GROUNDSPEED > takeoff.
 PrintHUD("Takeoff speed reached, pulling up.").
 LOCK STEERING TO HEADING(90,10).  //Takeoff
-
 
 WAIT UNTIL ALT:RADAR > 100.  //100 meters off the ground
 PrintHUD("Takeoff complete. Climbing.").
@@ -70,7 +75,10 @@ PrintHUD("Boost phase complete.  Coasting.").
 
 WAIT UNTIL ALTITUDE > 70000. //Out of atmosphere
 
-}. //End Landed IF
+//====================
+// In Space
+//====================
+
 
 IF (SHIP:STATUS = "SUB_ORBITAL") { //Allow continuing after reboot
 

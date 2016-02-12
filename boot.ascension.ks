@@ -1,6 +1,5 @@
 //Boot script for Ascension SSTO.  Runs ssto.ks with craft-specific parameters.
 //The Ascension can be downloaded here: http://kerbalx.com/crypto/Ascension
-BRAKES ON.
 
 copy ssto.ks from 0.
 copy lib_text.ks from 0.
@@ -13,12 +12,16 @@ SET climbDeg TO 25. // Pitch for initial climb in degrees
 SET sprintAoA TO 6. // Pitch to maintain level flight at beginning of sprint
 SET boostDeg TO 30. // Pitch when switching to rocket / boost phase.
 
-IF SHIP:STATUS = "PRELAUNCH" {
-PrintHUD("Craft ready.  Launching in 10 seconds.  Control-C to abort.").
-//Print "Enter 'RUN ssto' to launch.".
-WAIT 10.
-}. ELSE PrintHUD ("Rebooted in flight.").
-run ssto.
+Print SHIP:STATUS.
+IF SHIP:GroundSpeed < 5 { //On the runway
+	BRAKES ON.
+	PrintHUD("Craft ready.  Launching in 10 seconds.  Control-C to abort.").
+	WAIT 10.
+	run ssto.
+}. ELSE IF NOT (SHIP:STATUS = "ORBITING") { //If not safely in orbit
+	PrintHUD ("Rebooted in flight. Resuming.").
+	run ssto.
+}.
+//Delete boot script (this file) from craft
+DELETE CORE:BOOTFILENAME.
 
-//Delete boot script to prevent running on reboot.
-//DELETE CORE:BOOTFILENAME.

@@ -19,3 +19,28 @@ for e in eng {
 	else {Print "Error: Unclassified engine " + e:name + " will be ignored".}.
 }.
 
+Function RapierSet {
+//List of rapier engines, bool air
+parameter air.
+	for r in rapiers {
+		if NOT (air = r:PrimaryMode) { r:togglemode(). }.
+	}.
+}.
+
+
+Function EngineSet {
+//Pass a list of engines, and a bool, on
+parameter eList, on.
+	if on {
+		for e in eList {e:Activate.}.
+	}.
+	else {
+		for e in eList {e:Shutdown.}.
+	}.
+}.
+
+
+for r in rapiers {
+	set r:autoswitch to false.
+}.
+

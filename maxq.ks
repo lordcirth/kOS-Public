@@ -4,13 +4,13 @@
 // Made for all SSTO spaceplanes, in theory.
 // The following flight path parameters, customized to craft,
 // 	should be set in the script that calls this.  Or pasted in here if you really want.
-//	Proton numbers given as examples
-//SET takeoff 	TO 110. // Takeoff speed in m/s.
-//SET tgtQ 	TO  30. // Dynamic Pressure in kPa to hold
-//SET boostDeg 	TO  30  // Angle for rocket ascent
-
+// 
 //Known issues:  Payload engines will be activated.
 
+parameter takeoffSpeed.
+parameter takeoffAngle.
+parameter tgtQ.
+parameter boostDeg.
 //====================
 // Prep & declarations
 //====================
@@ -20,7 +20,7 @@ RUN ONCE lib_text.ks.  //Declare PrintHUD()
 SET SHIP:Control:PilotMainThrottle TO 0.
 
 COPY lib_engines.ks from 0.
-RUN lib_engines.ks.
+RUN lib_engines.ks. //Declares lists: jets, rapiers, nervs, rockets.
 
 FUNCTION PrintAscent { //Print misc info. Called from a steering loop.
 	clearscreen.
@@ -47,34 +47,12 @@ FUNCTION burnStart { //ETA till burn
 	Return ETA:Apoapsis - ( burnLen / 2 ).
 }
 
-for r in rapiers {
-	set r:autoswitch to false.
-}.
 
-
+SET jetMinThrust TO 70. //Point at which jets are considered done.
 SET boostDeg TO 30.
 
-if (rapiers:length > 0) { SET jetMaxAlt TO 25000. }.
 //Not used for turbos
-
-Function EngineSet {
-//Pass a list of engines, and a bool, on
-parameter eList, on.
-	if on {
-		for e in eList {e:Activate.}.
-	}.
-	else {
-		for e in eList {e:Shutdown.}.
-	}.
-}.
-
-Function RapierSet {
-//List of rapier engines, bool air
-parameter air.
-	for r in rapiers {
-		if NOT (air = r:PrimaryMode) { r:togglemode(). }.
-	}.
-}.
+if (rapiers:length > 0) { SET jetMaxAlt TO 25000. }.
 
 Function Fly {
 	SET Pitch TO DynP_PID:UPDATE(Time:Seconds, SHIP:Q).
@@ -85,45 +63,57 @@ Function Fly {
 //====================
 // Takeoff
 //====================
+//Check if we're on runway, otherwise skip ahead
+IF (SHIP:STATUS = "PRELAUNCH" OR SHIP:STATUS = "LANDED") {
+	Print("Takeoff Speed:	" + takeoffSpeed).
+	Print("Target Q:	" + tgtQ).
+	Print("Boost angle:	"  ).
 
-//Check if we're landed, otherwise skip ahead
-IF (SHIP:STATUS = "LANDED") OR (SHIP:STATUS = "PRELAUNCH") {
-Print "Landed, taking off".
-//Air-breathing
-RapierSet(true).
-EngineSet(rapiers, true).
-EngineSet(jets, true).
+	//Air-breathing
+	RapierSet(true).
+	EngineSet(rapiers, true).
+	EngineSet(jets, true).
 
-LOCK THROTTLE TO 1.
-//If we didn't reboot on runway
-IF SHIP:GROUNDSPEED < 3 { 
-	BRAKES ON.
-	WAIT 7.  //Spin up the engine
-}.//Otherwise skip spinup
-}. //End LANDED IF
+	LOCK THROTTLE TO 1.
+	//If we didn't reboot on runway
+	IF SHIP:GROUNDSPEED < 3 { 
+		PrintHUD("Craft ready.  Launching.  Control-C to abort.").
+		BRAKES ON.
+		WAIT 7.  //Spin up the engine
+	}.//Otherwise skip spinup
+}. //End PRELAUNCH/LANDED IF
+//End state:  Accelerating down runway.
 
-LOCK THROTTLE TO 1.
+IF (Alt:Radar < 100) {
+	LOCK THROTTLE TO 1.
 
-BRAKES OFF. 
-SET Pitch TO 3.  //Account for wheel tilt.
-LOCK STEERING TO HEADING(90,Pitch). 
+	BRAKES OFF. 
+	SET Pitch TO 3.  //Account for wheel tilt.
+	LOCK STEERING TO HEADING(90,Pitch). 
 
-WAIT UNTIL SHIP:GROUNDSPEED > takeoff.
-PrintHUD("Takeoff speed reached, pulling up.").
-SET Pitch TO 10.
-WAIT 2.
-SET Pitch TO 15.
+	WAIT UNTIL SHIP:GROUNDSPEED > takeoff.
+	PrintHUD("Takeoff speed reached, pulling up.").
+	SET Pitch TO takeoffAngle * 2/3 .
+	WAIT 2.
+	SET Pitch TO takeoffAngle.
 
+	WAIT UNTIL ALT:RADAR >  100.  
+	PrintHUD("Takeoff complete. Climbing.").
+}
+//End state:  Climbing off the runway, Alt:Radar > 100
 
-WAIT UNTIL ALT:RADAR >  100.  
-PrintHUD("Takeoff complete. Climbing.").
 
 IF (SHIP:STATUS = "FLYING") {
 //Retract landing gear
 GEAR OFF.
-//			kP,   kI, kD, min, max
-SET DynP_PID TO PIDLOOP(-400, -20, 10, 4,   50).
-SET DynP_PID:SetPoint TO tgtQ * Constant:kPaToAtm.
+
+//Initialize PID controller, using dynamic pressure input to control pitch.
+//			kP,   	kI, 	kD, 	min,	max
+SET DynP_PID TO PIDLOOP(-400,	-20, 	10, 	4,	50).
+
+//SetPoint in Atm because that's what SHIP:DynamicPressure gives.
+//Better to convert once than every loop.
+SET DynP_PID:SetPoint TO tgtQ * Constant:kPaToAtm. 
 
 if (rapiers:length > 0) {
 	WHEN  Altitude > 20000 THEN {
@@ -137,7 +127,7 @@ else if (jets:length > 0) {
 	UNTIL (jets[0]:Thrust < jetMinThrust) { Fly(). }.
 }.
 
-else {Print "Error: no air-breathing engines?".}.
+else {Print "Error: no air-breathing engines?  ".}.
 
 PrintHUD("Air-breathing flight complete.  Beginning boost phase.").
 SET Pitch TO (Pitch+boostDeg)/2.  //Gentle turn in two parts
@@ -218,6 +208,7 @@ ELSE { //Skip script if not landed, for safety.
 
 Unlock Steering. //Safely release controls
 SET SHIP:Control:PilotMainthrottle TO 0.
+
 
 
 

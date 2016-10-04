@@ -10,14 +10,19 @@
 parameter takeoffSpeed.
 parameter takeoffAngle.
 parameter tgtQ.
+parameter minPitch.
 parameter boostDeg.
+
 //====================
 // Prep & declarations
 //====================
 
+
 COPY lib_text.ks from 0.
 RUN ONCE lib_text.ks.  //Declare PrintHUD()
+
 SET SHIP:Control:PilotMainThrottle TO 0.
+//SET STEERINGMANAGER:MAXSTOPPINGTIME TO 5.
 
 COPY lib_engines.ks from 0.
 RUN lib_engines.ks. //Declares lists: jets, rapiers, nervs, rockets.
@@ -27,7 +32,13 @@ FUNCTION PrintAscent { //Print misc info. Called from a steering loop.
 	Print "Cur Q:    " + round(SHIP:DynamicPressure * Constant:AtmTokPa,1).
 	Print "Tgt Q:    " + round(DynP_PID:SETPoint * Constant:AtmTokPa ,1).
 	Print "Error:    " + round((SHIP:DynamicPressure * Constant:AtmTokPa - DynP_PID:SETPoint * Constant:AtmTokPa),4).
-	Print "Pitch:    " + round(Pitch,4).
+	Print "Want Pitch:    " + round(Pitch,4).
+	Print "Real Pitch:    " + round(Ship:Facing:Pitch,4).
+	SET pitchDiff TO (Pitch - Ship:Facing:Pitch).
+	Print "Pitch Diff:    " + round(pitchDiff,4).
+	if (abs(pitchDiff) > 5) {
+		Print "ERROR: Craft cannot follow autopilot!".
+	}
 }
 
 FUNCTION CalcCirc {
@@ -67,33 +78,34 @@ Function Fly {
 IF (SHIP:STATUS = "PRELAUNCH" OR SHIP:STATUS = "LANDED") {
 	Print("Takeoff Speed:	" + takeoffSpeed).
 	Print("Target Q:	" + tgtQ).
-	Print("Boost angle:	"  ).
+	Print("Boost angle:	" + boostDeg).
 
 	//Air-breathing
 	RapierSet(true).
 	EngineSet(rapiers, true).
 	EngineSet(jets, true).
-
 	LOCK THROTTLE TO 1.
-	//If we didn't reboot on runway
-	IF SHIP:GROUNDSPEED < 3 { 
-		PrintHUD("Craft ready.  Launching.  Control-C to abort.").
-		BRAKES ON.
-		WAIT 7.  //Spin up the engine
-	}.//Otherwise skip spinup
+
+//Brakes don't have as much grip in 1.1, they slide.
+//	//If we didn't reboot on runway
+//	IF SHIP:GROUNDSPEED < 3 { 
+//		PrintHUD("Craft ready.  Launching.  Control-C to abort.").
+//		BRAKES ON.
+//		WAIT 7.  //Spin up the engine
+//	}.//Otherwise skip spinup
+
 }. //End PRELAUNCH/LANDED IF
 //End state:  Accelerating down runway.
-
-IF (Alt:Radar < 100) {
+IF (Alt:Radar < 70) {
 	LOCK THROTTLE TO 1.
 
 	BRAKES OFF. 
 	SET Pitch TO 3.  //Account for wheel tilt.
 	LOCK STEERING TO HEADING(90,Pitch). 
 
-	WAIT UNTIL SHIP:GROUNDSPEED > takeoff.
+	WAIT UNTIL SHIP:GROUNDSPEED > takeoffSpeed.
 	PrintHUD("Takeoff speed reached, pulling up.").
-	SET Pitch TO takeoffAngle * 2/3 .
+	SET Pitch TO takeoffAngle * 2/3.
 	WAIT 2.
 	SET Pitch TO takeoffAngle.
 
@@ -109,7 +121,7 @@ GEAR OFF.
 
 //Initialize PID controller, using dynamic pressure input to control pitch.
 //			kP,   	kI, 	kD, 	min,	max
-SET DynP_PID TO PIDLOOP(-400,	-20, 	10, 	4,	50).
+SET DynP_PID TO PIDLOOP(-400,	-20, 	10, 	minPitch,	40).
 
 //SetPoint in Atm because that's what SHIP:DynamicPressure gives.
 //Better to convert once than every loop.
@@ -131,9 +143,17 @@ else {Print "Error: no air-breathing engines?  ".}.
 
 PrintHUD("Air-breathing flight complete.  Beginning boost phase.").
 SET Pitch TO (Pitch+boostDeg)/2.  //Gentle turn in two parts
-WAIT 5.  //Use as much jet Isp as possible
+WAIT 5.  
 
-EngineSet(jets, false).
+if (jets:length > 1) {
+	EngineSet(jets, false).
+}.
+else { //Run it till it flames out!
+	when (jets[0]:thrust < 1) then {
+		EngineSet(jets, false).
+	}.
+}.
+
 RapierSet(false). //Closed-Cycle
 EngineSet(nervs, true).
 EngineSet(rockets, true).

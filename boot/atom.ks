@@ -7,10 +7,10 @@ run once lib_text.
 
 // Set craft-specific variables.
 // These are available to any child program.
-SET takeoffSpeed TO 130. // Takeoff speed in m/s.
-SET takeoffAngle TO 20. // Degrees of pitch.
+SET takeoffSpeed TO 110. // Takeoff speed in m/s.
+SET takeoffAngle TO 15. // Degrees of pitch.
 SET tgtQ TO 40.
-SET minPitch to 30. //Minimum pitch required to not explode.  Workaround for imperfect PID.
+SET minPitch to 15. //Minimum pitch required to not explode.  Workaround for imperfect PID.
 SET boostDeg TO 30. // Pitch when switching to rocket / boost phase.
 
 Print SHIP:STATUS.

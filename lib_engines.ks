@@ -14,7 +14,7 @@ for e in eng {
 	//TODO detect jet/rocket generally?.
 	else if (e:name = "turboFanEngine") {jets:ADD(e).}.
 	//Matches many liquid rocket engines, not all
-	else if (e:name:contains("Liquid")) {rockets:ADD(e).}.
+	else if ((e:name:contains("Liquid")) OR (e:name:contains("aerospike"))) {rockets:ADD(e).}.
 
 	else {Print "Error: Unclassified engine " + e:name + " will be ignored".}.
 }.

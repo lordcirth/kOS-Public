@@ -5,7 +5,7 @@
 // The following flight path parameters, customized to craft,
 // 	should be set in the script that calls this.  Or pasted in here if you really want.
 // 
-//Known issues:  Payload engines will be activated.
+//Known issues:  Payload / VTOL engines will be activated.
 
 parameter takeoffSpeed.
 parameter takeoffAngle.
@@ -17,15 +17,17 @@ parameter boostDeg.
 // Prep & declarations
 //====================
 
+copypath ("0:/lib/lib_text.ks", "1:/").
+copypath ("0:/kslib/lib_navball.ks", "1:/").
+copypath ("0:/lib/lib_engines.ks", "1:/").
 
-COPY lib_text.ks from 0.
-RUN ONCE lib_text.ks.  //Declare PrintHUD()
+runoncepath ("1:/lib_text").
+runoncepath ("1:/lib_navball").
+runoncepath ("1:/lib_engines").
+
 
 SET SHIP:Control:PilotMainThrottle TO 0.
 //SET STEERINGMANAGER:MAXSTOPPINGTIME TO 5.
-
-COPY lib_engines.ks from 0.
-RUN lib_engines.ks. //Declares lists: jets, rapiers, nervs, rockets.
 
 FUNCTION PrintAscent { //Print misc info. Called from a steering loop.
 	clearscreen.
@@ -132,22 +134,23 @@ if (rapiers:length > 0) {
 		SET DynP_PID:SetPoint TO 15 * Constant:kPaToAtm.
 	}.
 	UNTIL (Altitude > jetMaxAlt) { Fly(). }.
-}.
+}
 
 //TODO:  Currently assumes all jets are the same (ie all whiplashes)
 else if (jets:length > 0) { 
 	UNTIL (jets[0]:Thrust < jetMinThrust) { Fly(). }.
-}.
+}
 
-else {Print "Error: no air-breathing engines?  ".}.
+else {Print "Error: no air-breathing engines?  ".}
 
 PrintHUD("Air-breathing flight complete.  Beginning boost phase.").
-SET Pitch TO (Pitch+boostDeg)/2.  //Gentle turn in two parts
+//Bug: Pitch is not defined if rebooted
+SET Pitch TO (pitch_for(SHIP) + boostDeg)/2.  //Gentle turn in two parts
 WAIT 5.  
 
-if (jets:length > 1) {
+if (NOT jets:length = 1) {
 	EngineSet(jets, false).
-}.
+}
 else { //Run it till it flames out!
 	when (jets[0]:thrust < 1) then {
 		EngineSet(jets, false).
@@ -158,6 +161,7 @@ RapierSet(false). //Closed-Cycle
 EngineSet(nervs, true).
 EngineSet(rockets, true).
 
+LOCK THROTTLE TO 1.
 SET Pitch TO boostDeg.  //Second half of turn
 
 WAIT UNTIL ALT:Apoapsis > 80000.

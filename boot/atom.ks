@@ -1,5 +1,5 @@
-copypath ("0:maxq.ks").
-copypath ("0:/lib/lib_text.ks").
+copypath ("0:maxq.ks", "1:/").
+copypath ("0:/lib/lib_text.ks", "1:/").
 run once lib_text.
 
 // Set craft-specific variables.

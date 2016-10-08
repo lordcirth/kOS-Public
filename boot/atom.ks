@@ -1,8 +1,5 @@
-//Boot script for Ascension SSTO.  Runs maxq.ks with craft-specific parameters.
-//The Ascension can be downloaded here: http://kerbalx.com/crypto/Ascension
-
-copy maxq.ks from 0.
-copy lib_text.ks from 0.
+copypath ("0:maxq.ks").
+copypath ("0:/lib/lib_text.ks").
 run once lib_text.
 
 // Set craft-specific variables.

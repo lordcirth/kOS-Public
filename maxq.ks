@@ -23,9 +23,9 @@ copypath ("0:/lib/lib_engines.ks", "1:/").
 
 runoncepath ("1:/lib_text").
 runoncepath ("1:/lib_navball").
-runoncepath ("1:/lib_engines").
+runpath ("1:/lib_engines", "untagged"). //Ignore tagged engines (VTOL, payload)
 
-
+SET jetMinThrust TO 70. //Point at which jets are considered done.
 SET SHIP:Control:PilotMainThrottle TO 0.
 //SET STEERINGMANAGER:MAXSTOPPINGTIME TO 5.
 
@@ -144,8 +144,8 @@ else if (jets:length > 0) {
 else {Print "Error: no air-breathing engines?  ".}
 
 PrintHUD("Air-breathing flight complete.  Beginning boost phase.").
-//Bug: Pitch is not defined if rebooted
 SET Pitch TO (pitch_for(SHIP) + boostDeg)/2.  //Gentle turn in two parts
+LOCK STEERING TO HEADING(90,Pitch). 
 WAIT 5.  
 
 if (NOT jets:length = 1) {
@@ -218,8 +218,9 @@ UNTIL burnStart() < 1 { //0 always misses and overlaps!
 WAIT 2.  //Burn ~1sec late, fudge to make up for mass decrease
 
 PrintHUD("Beginning final burn.").
+SET Ap TO Apoapsis.
 LOCK THROTTLE TO 1.
-WAIT UNTIL Periapsis > 79000.
+WAIT UNTIL Periapsis > Ap - 1000.
 LOCK THROTTLE TO 0.
 
 PrintHUD("Circularization complete. Releasing controls.").

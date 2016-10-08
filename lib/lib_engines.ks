@@ -1,10 +1,35 @@
-LIST engines IN eng.
+parameter tagged. //Values: 
+	//"tagged": return tagged engines only
+	//"untagged": untagged only
+	//"all"
+	//invalid args = all
+
+LIST engines IN raweng.
+SET eng TO List().
+
+if (tagged = "tagged") {
+	for e in raweng {
+		if (e:tag <> "") {
+			eng:Add(e).
+		}
+	}
+}
+else if (tagged = "untagged") {
+	for e in raweng {
+		if (e:tag = "") {
+			eng:Add(e).
+		}
+	}
+}
+else { SET eng TO raweng. }
+
 SET jets TO List(). 
 SET rapiers TO List(). 
 SET nervs TO List(). 
 SET rockets TO List(). 
 
 SET jetMinThrust TO 70. //Point at which jets are considered done.
+
 
 //TODO: Figure out how to exclude payload engines
 for e in eng {

@@ -17,6 +17,10 @@ parameter boostDeg.
 // Prep & declarations
 //====================
 
+if ( Body:name <> "Kerbin" ) {
+	return.
+}
+
 copypath ("0:/lib/lib_text.ks", "1:/").
 copypath ("0:/kslib/lib_navball.ks", "1:/").
 copypath ("0:/lib/lib_engines.ks", "1:/").
@@ -35,8 +39,8 @@ FUNCTION PrintAscent { //Print misc info. Called from a steering loop.
 	Print "Tgt Q:    " + round(DynP_PID:SETPoint * Constant:AtmTokPa ,1).
 	Print "Error:    " + round((SHIP:DynamicPressure * Constant:AtmTokPa - DynP_PID:SETPoint * Constant:AtmTokPa),4).
 	Print "Want Pitch:    " + round(Pitch,4).
-	Print "Real Pitch:    " + round(Ship:Facing:Pitch,4).
-	SET pitchDiff TO (Pitch - Ship:Facing:Pitch).
+	Print "Real Pitch:    " + round(pitch_for(SHIP),4).
+	SET pitchDiff TO (Pitch - pitch_for(SHIP)).
 	Print "Pitch Diff:    " + round(pitchDiff,4).
 	if (abs(pitchDiff) > 5) {
 		Print "ERROR: Craft cannot follow autopilot!".
@@ -86,7 +90,6 @@ IF (SHIP:STATUS = "PRELAUNCH" OR SHIP:STATUS = "LANDED") {
 	RapierSet(true).
 	EngineSet(rapiers, true).
 	EngineSet(jets, true).
-	LOCK THROTTLE TO 1.
 
 //Brakes don't have as much grip in 1.1, they slide.
 //	//If we didn't reboot on runway
@@ -98,12 +101,14 @@ IF (SHIP:STATUS = "PRELAUNCH" OR SHIP:STATUS = "LANDED") {
 
 }. //End PRELAUNCH/LANDED IF
 //End state:  Accelerating down runway.
+
+LOCK THROTTLE TO 1.
+SET Pitch TO 3.  //Account for wheel tilt.
+LOCK STEERING TO HEADING(90,Pitch). 
+
 IF (Alt:Radar < 70) {
-	LOCK THROTTLE TO 1.
 
 	BRAKES OFF. 
-	SET Pitch TO 3.  //Account for wheel tilt.
-	LOCK STEERING TO HEADING(90,Pitch). 
 
 	WAIT UNTIL SHIP:GROUNDSPEED > takeoffSpeed.
 	PrintHUD("Takeoff speed reached, pulling up.").
@@ -148,14 +153,14 @@ SET Pitch TO (pitch_for(SHIP) + boostDeg)/2.  //Gentle turn in two parts
 LOCK STEERING TO HEADING(90,Pitch). 
 WAIT 5.  
 
-if (NOT jets:length = 1) {
-	EngineSet(jets, false).
-}
-else { //Run it till it flames out!
+//Jets flare out evenly now!
+//Run it till it flames out!
+
+if (jets:length > 0) { 
 	when (jets[0]:thrust < 1) then {
 		EngineSet(jets, false).
 	}.
-}.
+}
 
 RapierSet(false). //Closed-Cycle
 EngineSet(nervs, true).
@@ -169,7 +174,7 @@ LOCK THROTTLE TO 0. //Coast to Apoapsis
 LOCK STEERING TO PROGRADE.  //Minimize drag
 PrintHUD("Boost phase complete.  Coasting.").
 
-WAIT UNTIL ALTITUDE > 70000. //Out of atmosphere
+WAIT UNTIL ALTITUDE > 70500. //Out of atmosphere and past jolt
 
 }. //End FLYING IF
 //====================
@@ -178,6 +183,8 @@ WAIT UNTIL ALTITUDE > 70000. //Out of atmosphere
 
 
 IF (SHIP:STATUS = "SUB_ORBITAL") { //Allow continuing after reboot
+LOCK STEERING TO PROGRADE.  //Minimize drag
+
 Print "Suborbital".
 SET burnLen TO 0. //Declare global
 SET Pitch TO 0.  

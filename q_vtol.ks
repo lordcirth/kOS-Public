@@ -1,4 +1,4 @@
-// autobalance a 2-engine vtol plane
+// autobalance a 4-engine vtol plane
 // Rocket engines, not spooling jets
 
 //Libs
@@ -10,8 +10,11 @@ runoncepath ("1:/lib_navball").
 //Setup
 SET want_heading  TO 0.
 SET want_pitch TO 0.
-set fore_engine to Ship:PartsTagged("fore_engine")[0].
-set rear_engine to Ship:PartsTagged("rear_engine")[0].
+set fore_left to Ship:PartsTagged("fore_left")[0].
+set rear_left to Ship:PartsTagged("rear_left")[0].
+set fore_right to Ship:PartsTagged("fore_right")[0].
+set rear_right to Ship:PartsTagged("rear_right")[0].
+
 lock steering to heading (want_heading, want_pitch).
 
 SET vtolPID TO PIDLoop(10, 2, 4, -50, 50).

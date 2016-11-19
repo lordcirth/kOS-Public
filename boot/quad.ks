@@ -1,2 +1,2 @@
 switch to 0.
-run quad.ks.
+run q_vtol.ks.

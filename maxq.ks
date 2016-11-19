@@ -18,7 +18,7 @@ parameter boostDeg.
 //====================
 
 if ( Body:name <> "Kerbin" ) {
-	return.
+	exit.
 }
 
 copypath ("0:/lib/lib_text.ks", "1:/").
@@ -183,7 +183,8 @@ WAIT UNTIL ALTITUDE > 70500. //Out of atmosphere and past jolt
 
 
 IF (SHIP:STATUS = "SUB_ORBITAL") { //Allow continuing after reboot
-LOCK STEERING TO PROGRADE.  //Minimize drag
+LOCK STEERING TO PROGRADE.  
+LOCK THROTTLE TO 0. //Coast to Apoapsis
 
 Print "Suborbital".
 SET burnLen TO 0. //Declare global
@@ -222,12 +223,12 @@ UNTIL burnStart() < 1 { //0 always misses and overlaps!
 	WAIT 0.2.
 }.
 
-WAIT 2.  //Burn ~1sec late, fudge to make up for mass decrease
+WAIT 4.  //Burn late, fudge to make up for mass decrease
 
 PrintHUD("Beginning final burn.").
 SET Ap TO Apoapsis.
 LOCK THROTTLE TO 1.
-WAIT UNTIL Periapsis > Ap - 1000.
+WAIT UNTIL ((Periapsis > Ap - 1000) OR (Periapsis > 80000)).
 LOCK THROTTLE TO 0.
 
 PrintHUD("Circularization complete. Releasing controls.").

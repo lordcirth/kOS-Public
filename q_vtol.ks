@@ -17,7 +17,7 @@ set rear_right to Ship:PartsTagged("rear_right")[0].
 
 lock steering to heading (want_heading, want_pitch).
 
-SET vtolPID TO PIDLoop(10, 2, 4, -50, 50).
+SET vtolPID TO PIDLoop(2, 2, 4, -50, 50).
 
 printHUD ("VTOL start.  AG9 to exit").
 
@@ -41,8 +41,14 @@ function balanceLoop {
 
 	SET vtolPID:SetPoint TO want_pitch.
 	SET pitch_correct TO vtolPID:Update(TIME:SECONDS, pitch_for(SHIP)).
-		set fore_engine:ThrustLimit to (100 + (pitch_correct) ).
-	set rear_engine:ThrustLimit to (100 - (pitch_correct) ).
+
+	set fore_minus to 0 - pitch_correct.
+	set rear_minus to 0 + pitch_correct.
+
+	set fore_left:ThrustLimit to (100 - fore_minus).
+	set fore_right:ThrustLimit to (100 - fore_minus).
+	set rear_left:ThrustLimit to (100 - rear_minus).
+	set rear_right:ThrustLimit to (100 - rear_minus).
 }
 //TODO: Add boolean for debug mode?
 //Purpose: Print information.
@@ -59,8 +65,8 @@ function printLoop {
 	print "Pilot Yaw:        " + Ship:Control:PilotPitch.
 	print "want heading:     " + round(want_heading, 1).
 	
-	print "Fore Engine:      " + round(fore_engine:ThrustLimit, 1).
-	print "Rear Engine:      " + round(rear_engine:ThrustLimit, 1).
+	//print "Fore Engine:      " + round(fore_engine:ThrustLimit, 1).
+	//print "Rear Engine:      " + round(rear_engine:ThrustLimit, 1).
 }
 
 until false {

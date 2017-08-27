@@ -69,3 +69,11 @@ for r in rapiers {
 	set r:autoswitch to false.
 }.
 
+
+Function EngineLimit {
+//Pass a list of engines, and the new thrust limit
+parameter eList, limit.
+
+	for e in eList {set e:ThrustLimit to limit.}.
+
+}.

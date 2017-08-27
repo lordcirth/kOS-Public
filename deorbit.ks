@@ -1,17 +1,17 @@
 //Deorbit & landing script for SSTO spaceplanes, specifically the Ascension.
 //File: deorbit.ks  From: https://github.com/lordcirth/kOS-Public
 
-COPY lib_safe.ks from 0.
-RUN ONCE lib_safe.ks.
-COPY lib_text.ks from 0.
-RUN ONCE lib_text.ks.
-COPY lib_rapier.ks from 0.
-RUN ONCE lib_rapier.ks.
-COPY zeroinc.ks from 0.
-COPY lib_long.ks from 0.
-RUN ONCE lib_long.
-COPY lib_pid.ks from 0.	//From https://github.com/gisikw/ksprogramming
-RUN ONCE lib_pid.	//Thanks for the library!
+//COPY lib_safe.ks from 0.
+RUNONCEPATH("0:/lib/lib_safe.ks").
+//COPY lib_text.ks from 0.
+RUNONCEPATH("0:/lib/lib_text.ks").
+//COPY lib_rapier.ks from 0.
+RUNONCEPATH("0:/lib/lib_rapier.ks").
+//COPY zeroinc.ks from 0.
+//COPY lib_long.ks from 0.
+RUNONCEPATH("0:/lib/lib_long").
+//COPY lib_pid.ks from 0.	//From https://github.com/gisikw/ksprogramming
+RUNONCEPATH("0:/kslib/lib_pid").	//Thanks for the library!
 
 //====================
 //Functions: 
@@ -72,7 +72,7 @@ SET runwayLat TO -0.048591406236738. //In -180 <-> 180 notation
 
 SET minAlt TO 50000. //Counts lowest Radar Alt, info only
 
-SAFE_TAKEOVER().
+SAFE_TAKEOVER(). //Re-enable SAS
 
 IF (SHIP:STATUS = "ORBITING") { //Ensure safe reboot / update.
 

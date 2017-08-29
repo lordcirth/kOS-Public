@@ -184,16 +184,16 @@ PrintHUD ("KSC in sight.").
 //New glide slope since we are past the mountains 
 SET finalAlt TO 200. //As low as is safe over the last hill.
 SET startAlt TO SHIP:Altitude.
-SET finalLong TO runwayLong - 0.33. //End over the last hill.
+SET finalLong TO runwayLong - 0.30. //End over the last hill.
 SET startLong TO SrfLong().
 
-SET AltPID TO PID_init(0.60,0.10,1.60,-15,15). //Retune PID for landing
+SET AltPID TO PID_init(0.30,0.10,1.00,-15,15). //Retune PID for landing
 NewSlope(). //Update course
 SET cruiseSpd TO 200.
 
 //WHEN statements run in parallel, unlike WAIT or UNTIL
 WHEN runwayLong - SrfLong() < 0.7 THEN {
-	SET cruiseSpd TO 120.
+	SET cruiseSpd TO 110.
 	GEAR OFF. //Reset
 	GEAR ON.  //Landing gear down
 	BRAKES OFF. //Reset
@@ -201,13 +201,18 @@ WHEN runwayLong - SrfLong() < 0.7 THEN {
 
 PrintHUD ("On final approach.").
 
-//WHEN SrfLong() > finalLong THEN {
-//	LOCK TgtDir to 90. //Straight East, no steering
-//	SET landingSpd TO 0.7. //vertical speed to (try to) land at
-//	// y = m*(x-x2) + y2 Construct line from landing slope and point.
-//	LOCK TgtAlt TO (landingSpd) * 100 *(runwayLong - SrfLong() + 0.05 ) + 070. 
-//	PrintHUD("Landing guidance").
-//}.
+WHEN SrfLong() > finalLong THEN {
+	LOCK TgtDir to 90. 	//Straight East, no steering
+	SET landingSpd TO 2. 	//vertical speed to (try to) land at
+	// y = m*(x-x2) + y2 Construct line from landing slope and point.
+	LOCK TgtAlt TO (landingSpd) * 100 *(runwayLong - SrfLong() + 0.05 ) + 075. 
+	PrintHUD("Landing guidance").
+}.
+
+WHEN (SrfLong() > finalLong + 0.10) THEN {
+	SET landingSpd TO 1. 	//vertical speed to (try to) land at
+	PrintHUD("Landing guidance 2").
+}.
 
 //Sqrt curve version
 // Doesn't work yet
@@ -229,7 +234,7 @@ UNTIL  ALT:RADAR < 3.5 { //Landed/Landing
 }.
 
 SET Pitch TO Pitch - 3. // Don't pitch up and smash the engines
-WAIT 1. //Make sure we're stably rolling
+WAIT 2. //Make sure we're stably rolling
 SET cruiseSpd to 0. 
 BRAKES ON.
 PrintHUD("Landed.  Braking.").

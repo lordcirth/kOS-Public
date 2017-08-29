@@ -86,8 +86,8 @@ SET WARPMODE TO "RAILS".
 SET WARP TO 3. //50X
 UNTIL abs(runwayLong - BurnLong - Ship:Longitude) < 15  {  //WARP until 15deg to deorbit
 	clearscreen.
-	Print  "Deorbit in: " + (runwayLong - BurnLong - Ship:Longitude).
-	WAIT 5.
+	Print  "Deorbit in: " + round((runwayLong - BurnLong - Ship:Longitude),2) + " degrees".
+	WAIT 1.
 }.
 SET WARP TO 0.  //Realtime
 
@@ -193,7 +193,7 @@ SET cruiseSpd TO 200.
 
 //WHEN statements run in parallel, unlike WAIT or UNTIL
 WHEN runwayLong - SrfLong() < 0.7 THEN {
-	SET cruiseSpd TO 110.
+	SET cruiseSpd TO 130.
 	GEAR OFF. //Reset
 	GEAR ON.  //Landing gear down
 	BRAKES OFF. //Reset

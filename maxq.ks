@@ -29,7 +29,6 @@ runoncepath ("1:/lib_text").
 runoncepath ("1:/lib_navball").
 runpath ("1:/lib_engines", "untagged"). //Ignore tagged engines (VTOL, payload)
 
-SET jetMinThrust TO 70. //Point at which jets are considered done.
 SET SHIP:Control:PilotMainThrottle TO 0.
 //SET STEERINGMANAGER:MAXSTOPPINGTIME TO 5.
 
@@ -45,6 +44,7 @@ FUNCTION PrintAscent { //Print misc info. Called from a steering loop.
 	if (abs(pitchDiff) > 5) {
 		Print "ERROR: Craft cannot follow autopilot!".
 	}
+	Print "Remaining jet fuel: " + round(GetJetBudget(),0).
 }
 
 FUNCTION CalcCirc {
@@ -69,7 +69,7 @@ SET jetMinThrust TO 70. //Point at which jets are considered done.
 SET boostDeg TO 30.
 
 //Not used for turbos
-if (rapiers:length > 0) { SET jetMaxAlt TO 25000. }.
+if (rapiers:length > 0) { SET jetMaxAlt TO 20000. }.
 
 Function Fly {
 	SET Pitch TO DynP_PID:UPDATE(Time:Seconds, SHIP:Q).
@@ -90,14 +90,6 @@ IF (SHIP:STATUS = "PRELAUNCH" OR SHIP:STATUS = "LANDED") {
 	RapierSet(true).
 	EngineSet(rapiers, true).
 	EngineSet(jets, true).
-
-//Brakes don't have as much grip in 1.1, they slide.
-//	//If we didn't reboot on runway
-//	IF SHIP:GROUNDSPEED < 3 { 
-//		PrintHUD("Craft ready.  Launching.  Control-C to abort.").
-//		BRAKES ON.
-//		WAIT 7.  //Spin up the engine
-//	}.//Otherwise skip spinup
 
 }. //End PRELAUNCH/LANDED IF
 //End state:  Accelerating down runway.
@@ -135,9 +127,6 @@ SET DynP_PID TO PIDLOOP(-400,	-20, 	10, 	minPitch,	40).
 SET DynP_PID:SetPoint TO tgtQ * Constant:kPaToAtm. 
 
 if (rapiers:length > 0) {
-	WHEN  Altitude > 20000 THEN {
-		SET DynP_PID:SetPoint TO 15 * Constant:kPaToAtm.
-	}.
 	UNTIL (Altitude > jetMaxAlt) { Fly(). }.
 }
 

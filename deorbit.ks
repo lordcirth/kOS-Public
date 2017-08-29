@@ -6,7 +6,7 @@ RUNONCEPATH("0:/lib/lib_safe.ks").
 //COPY lib_text.ks from 0.
 RUNONCEPATH("0:/lib/lib_text.ks").
 //COPY lib_rapier.ks from 0.
-RUNONCEPATH("0:/lib/lib_rapier.ks").
+RUNONCEPATH("0:/lib/lib_engines.ks", "all").
 //COPY zeroinc.ks from 0.
 //COPY lib_long.ks from 0.
 RUNONCEPATH("0:/lib/lib_long").
@@ -49,15 +49,13 @@ FUNCTION PrintGlide { //Print misc info. Called from a steering loop.
 	}.
 }.
 
-//Manage airbrakes in Action Group 10.
+//Manage airbrakes found by lib_engine
 FUNCTION AutoBrake { //Should be called from a loop
 parameter speed.  //Speed to brake at
 	IF Ship:Velocity:Surface:MAG > speed {
-		AG10 OFF. //Reset
-		AG10 ON.
+		AirbrakeSet(airbrakes,true).
 	}. ELSE {
-		AG10 ON.  //Reset
-		AG10 OFF.
+		AirbrakeSet(airbrakes,false).
 	}.
 }.
 
@@ -76,7 +74,7 @@ SAFE_TAKEOVER(). //Re-enable SAS
 
 IF (SHIP:STATUS = "ORBITING") { //Ensure safe reboot / update.
 
-SetRapiersMode("ClosedCycle").  //Ensure rapiers are in rocket mode for burn
+RapierSet(false).  //Ensure rapiers are in rocket mode for burn
 
 IF SHIP:ORBIT:Inclination > 0.5 { 
 	run zeroinc.  //Zero our orbital inclination
@@ -134,12 +132,16 @@ SET TgtDir TO 90. //East.  Will correct later.
 //Update Pitch and TgtDir to change steering.
 LOCK STEERING TO Heading(TgtDir,Pitch).
 
-SetRapiersMode("AirBreathing").
-AG10 OFF. //Reset
-AG10 ON.  //Airbrakes On
+// in AJE, jets will explode if exposed to re-entry intake air
+EngineSet(rapiers, false).
+EngineSet(jets, false).
+RapierSet(true).
+
+AirbrakeSet(airbrakes,true).
 
 WAIT UNTIL SHIP:Velocity:Surface:MAG < 1000. //Wait until not on fire.
-
+EngineSet(rapiers, true).
+EngineSet(jets, true).
 PrintHUD("Reentry complete.  Aiming for KSC.").
 
 // Curve that converges to runway.
@@ -180,18 +182,18 @@ UNTIL SrfLong() > finalLong {  //Past the mountains
 PrintHUD ("KSC in sight.").
 
 //New glide slope since we are past the mountains 
-SET finalAlt TO 250. //As low as is safe over the last hill.
+SET finalAlt TO 200. //As low as is safe over the last hill.
 SET startAlt TO SHIP:Altitude.
-SET finalLong TO runwayLong - 0.3. //End over the last hill.
+SET finalLong TO runwayLong - 0.33. //End over the last hill.
 SET startLong TO SrfLong().
 
-SET AltPID TO PID_init(0.32,0.064,0.64,-15,15). //Retune PID for landing
+SET AltPID TO PID_init(0.60,0.10,1.60,-15,15). //Retune PID for landing
 NewSlope(). //Update course
 SET cruiseSpd TO 200.
 
 //WHEN statements run in parallel, unlike WAIT or UNTIL
 WHEN runwayLong - SrfLong() < 0.7 THEN {
-	SET cruiseSpd TO 95.
+	SET cruiseSpd TO 120.
 	GEAR OFF. //Reset
 	GEAR ON.  //Landing gear down
 	BRAKES OFF. //Reset
@@ -199,13 +201,21 @@ WHEN runwayLong - SrfLong() < 0.7 THEN {
 
 PrintHUD ("On final approach.").
 
-WHEN SrfLong() > finalLong THEN {
-	LOCK TgtDir to 90. //Straight East, no steering
-	SET landingSpd TO 4. //vertical speed to (try to) land at
-	// y = m*(x-x2) + y2 Construct line from landing slope and point.
-	LOCK TgtAlt TO (landingSpd) * 100 *(runwayLong - SrfLong() + 0.05 ) + 70. 
-	PrintHUD("Landing guidance").
-}.
+//WHEN SrfLong() > finalLong THEN {
+//	LOCK TgtDir to 90. //Straight East, no steering
+//	SET landingSpd TO 0.7. //vertical speed to (try to) land at
+//	// y = m*(x-x2) + y2 Construct line from landing slope and point.
+//	LOCK TgtAlt TO (landingSpd) * 100 *(runwayLong - SrfLong() + 0.05 ) + 070. 
+//	PrintHUD("Landing guidance").
+//}.
+
+//Sqrt curve version
+// Doesn't work yet
+//WHEN SrfLong() > finalLong THEN {
+//	LOCK TgtDir to 90. //Straight East, no steering
+//	// y = sqrt(x + 0.33) + currentAlt
+//	LOCK TgtAlt TO -05 * sqrt(10*(runwayLong - SrfLong() + 0.33)) + 100.
+//}.
 
 UNTIL  ALT:RADAR < 3.5 { //Landed/Landing
 	//Increase throttle based on m/s we lack.  Gentler this time
@@ -218,12 +228,13 @@ UNTIL  ALT:RADAR < 3.5 { //Landed/Landing
 	WAIT 0.2. //Fast reflexes for this part.
 }.
 
+SET Pitch TO Pitch - 3. // Don't pitch up and smash the engines
 WAIT 1. //Make sure we're stably rolling
 SET cruiseSpd to 0. 
 BRAKES ON.
 PrintHUD("Landed.  Braking.").
 LOCK THROTTLE TO 0.
-SetRapiersOff().  //Keeps idling otherwise
+EngineSet(rapiers, false).  //Keeps idling otherwise
 AG10 ON.//Airbrakes.
 WAIT UNTIL SHIP:Velocity:Surface:MAG < 1. 
 WAIT 1.  //Keep steering East until we stop.

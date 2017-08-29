@@ -1,11 +1,11 @@
-parameter tagged. //Values: 
+parameter tagged. //Values:
 	//"tagged": return tagged engines only
 	//"untagged": untagged only
 	//"all"
 	//invalid args = all
 
 LIST engines IN raweng.
-SET eng TO List().
+set eng TO List().
 
 if (tagged = "tagged") {
 	for e in raweng {
@@ -21,14 +21,14 @@ else if (tagged = "untagged") {
 		}
 	}
 }
-else { SET eng TO raweng. }
+else { set eng TO raweng. }
 
-SET jets TO List(). 
-SET rapiers TO List(). 
-SET nervs TO List(). 
-SET rockets TO List(). 
+set jets TO List().
+set rapiers TO List().
+set nervs TO List().
+set rockets TO List().
 
-SET jetMinThrust TO 70. //Point at which jets are considered done.
+set jetMinThrust TO 70. //Point at which jets are considered done.
 
 
 //TODO: Figure out how to exclude payload engines
@@ -76,4 +76,32 @@ parameter eList, limit.
 
 	for e in eList {set e:ThrustLimit to limit.}.
 
+}.
+
+// How much LF do we have, excluding that which matches Ox?
+Function GetJetBudget {
+	set lf to ship:liquidfuel.
+	set ox to ship:oxidizer.
+	set matched_lf to (ox/11 * 9).
+	set extra_lf to lf - matched_lf.
+	return extra_lf.
+
+}.
+
+set airbrakes TO List().
+
+for p in ship:parts {
+	if (p:name = "airbrake1") {airbrakes:ADD(p).}.
+
+}.
+
+Function AirbrakeSet {
+//Pass a list of engines, and a bool, on
+parameter bList, on.
+	if on {
+		for b in bList {b:getmodule("ModuleAeroSurface"):doaction("extend",true).}.
+	}.
+	else {
+		for b in bList {b:getmodule("ModuleAeroSurface"):doaction("retract",true).}.
+	}.
 }.
